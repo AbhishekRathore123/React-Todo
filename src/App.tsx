@@ -9,9 +9,26 @@ export interface Todo {
 
 function App() {
   const [currentValue, setCurrentValue] = React.useState("");
-  const [todos, setTodos] = React.useState<Todo[]>([]);
+  const [todos, setTodos] = React.useState<Todo[]>(() => {
+    // Load todos from localStorage on initial state
+    const savedTodos = localStorage.getItem("todos");
+    if (savedTodos) {
+      try {
+        return JSON.parse(savedTodos);
+      } catch (error) {
+        console.error("Failed to parse todos from localStorage:", error);
+        return [];
+      }
+    }
+    return [];
+  });
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editValue, setEditValue] = React.useState("");
+
+  // Save todos to localStorage whenever they change
+  React.useEffect(() => {
+    localStorage.setItem("todos", JSON.stringify(todos));
+  }, [todos]);
 
   function handleAddTodo() {
     if (currentValue.trim() === "") return;
