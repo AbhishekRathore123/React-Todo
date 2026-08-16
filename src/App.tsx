@@ -10,6 +10,8 @@ export interface Todo {
 function App() {
   const [currentValue, setCurrentValue] = React.useState("");
   const [todos, setTodos] = React.useState<Todo[]>([]);
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [editValue, setEditValue] = React.useState("");
 
   function handleAddTodo() {
     if (currentValue.trim() === "") return;
@@ -35,9 +37,39 @@ function App() {
     setTodos(todos.filter((todo) => todo.id !== id));
   }
 
+  function handleStartEdit(id: string, currentTitle: string) {
+    setEditingId(id);
+    setEditValue(currentTitle);
+  }
+
+  function handleSaveEdit(id: string) {
+    if (editValue.trim() === "") return;
+
+    setTodos(
+      todos.map((todo) =>
+        todo.id === id ? { ...todo, title: editValue } : todo
+      )
+    );
+    setEditingId(null);
+    setEditValue("");
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setEditValue("");
+  }
+
   function handleKeyPress(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       handleAddTodo();
+    }
+  }
+
+  function handleEditKeyPress(e: React.KeyboardEvent<HTMLInputElement>, id: string) {
+    if (e.key === "Enter") {
+      handleSaveEdit(id);
+    } else if (e.key === "Escape") {
+      handleCancelEdit();
     }
   }
 
@@ -75,8 +107,8 @@ function App() {
               <li 
                 key={todo.id} 
                 className={`todo-item ${todo.isCompleted ? "completed" : ""}`}
-                onClick={() => handleToggleTodo(todo.id)}
-                style={{ cursor: 'pointer' }}
+                onClick={() => !editingId && handleToggleTodo(todo.id)}
+                style={{ cursor: editingId ? 'default' : 'pointer' }}
               >
                 <input
                   type="checkbox"
@@ -85,16 +117,59 @@ function App() {
                   className="todo-checkbox"
                   onClick={(e) => e.stopPropagation()}
                 />
-                <span className="todo-title">{todo.title}</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveTodo(todo.id);
-                  }}
-                  className="delete-button"
-                >
-                  ✕
-                </button>
+                {editingId === todo.id ? (
+                  <div className="edit-container" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyPress={(e) => handleEditKeyPress(e, todo.id)}
+                      onBlur={() => handleSaveEdit(todo.id)}
+                      className="edit-input"
+                      autoFocus
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSaveEdit(todo.id);
+                      }}
+                      className="save-button"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCancelEdit();
+                      }}
+                      className="cancel-button"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="todo-title">{todo.title}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartEdit(todo.id, todo.title);
+                      }}
+                      className="edit-button"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveTodo(todo.id);
+                      }}
+                      className="delete-button"
+                    >
+                      ✕
+                    </button>
+                  </>
+                )}
               </li>
             ))}
           </ul>
